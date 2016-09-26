@@ -34,10 +34,10 @@ RC createPageFile (char *fileName){
 	if (!sm_file){
 		return RC_FILE_NOT_FOUND;
 	}
-	for(int i=0; i<PAGE_SIZE;i++)
+	for(int i=ZERO; i<PAGE_SIZE;i++)
 		putc('\0',sm_file);
 	sm_fileHandle->fileName = fileName;
-	updateSmFileHandle(1,FIRST_PAGE,sm_fileHandle);
+	updateSmFileHandle(ONE,FIRST_PAGE,sm_fileHandle);
 	return RC_OK;
 }
 
@@ -47,11 +47,13 @@ RC openPageFile (char *fileName, SM_FileHandle *fHandle){
 	if (!sm_file){
 		return RC_FILE_NOT_FOUND;
 	}
-	fseek(sm_file,0,SEEK_END);
+	fseek(sm_file,ZERO,SEEK_END);
 	int last_byte_loc = ftell(sm_file);
 	int totalNumPages = (int) last_byte_loc / PAGE_SIZE;
-	updateSmFileHandle(totalNumPages,1,fHandle);
+	updateSmFileHandle(totalNumPages,ONE,fHandle);
 	printf("total No of pages in file %d ", totalNumPages);
+
+    return RC_OK;
 }
 
 /*
