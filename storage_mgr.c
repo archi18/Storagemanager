@@ -115,7 +115,16 @@ RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage){
 }
 
 
+RC readLastBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
+    if(fHandle->totalNumPages <=0)
+        return RC_FILE_HANDLE_NOT_INIT;
+    if(sm_file<=0)
+        return RC_FILE_NOT_FOUND;
+    fseek(sm_file,(fHandle->totalNumPages-1)*PAGE_SIZE, 0);
+    memPage =  malloc(sizeof(char)*PAGE_SIZE);
+    size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
+    if(ret_Read <= 0)
+        return RC_READ_NON_EXISTING_PAGE;
+    updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE,fHandle);
 
-
-
-
+}
