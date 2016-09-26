@@ -15,7 +15,6 @@
 #include "dberror.h"
 
 void updateSmFileHandle(int , int ,SM_FileHandle *);
-void countPageNum(FILE);
 
 FILE *sm_file;
 SM_FileHandle *sm_fileHandle;
@@ -48,11 +47,11 @@ RC openPageFile (char *fileName, SM_FileHandle *fHandle){
 	if (!sm_file){
 		return RC_FILE_NOT_FOUND;
 	}
-	
-	int sz = ftell(sm_file);
-	int totalNumPages = (int) sz / PAGE_SIZE;
+	fseek(sm_file,0,SEEK_END);
+	int last_byte_loc = ftell(sm_file);
+	int totalNumPages = (int) last_byte_loc / PAGE_SIZE;
 	updateSmFileHandle(totalNumPages,1,fHandle);
-
+	printf("total No of pages in file %d ", totalNumPages);
 }
 
 /*
@@ -64,6 +63,30 @@ This method will update information in SM_FileHandle
 void updateSmFileHandle(int totalNumPages, int curPagePos,SM_FileHandle *sm_fileHandle){
 	sm_fileHandle->totalNumPages = totalNumPages;
 	sm_fileHandle->curPagePos = curPagePos;
+}
+
+RC closePageFile (SM_FileHandle *fHandle){
+	fclose(sm_file);
+	free(fHandle);
+}
+RC destroyPageFile (char *fileName){
+	fclose(sm_file);
+	if(remove(fileName)!=0)
+		return RC_FILE_NOT_FOUND;
+	else
+		return RC_OK;
+}
+
+RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage){
+	if(pageNum > fHandle->totalNumPages)
+		return RC_READ_NON_EXISTING_PAGE;
+	memPage = (char*) malloc(sizeof(char)*PAGE_SIZE);
+	fseek(sm_file,PAGE_SIZE * (pageNum-1), SEEK_SET);
+	size_t ret_Read = fread(memPage, 1, PAGE_SIZE,sm_file);
+	if(ret_Read != 0)
+		return RC_READ_NON_EXISTING_PAGE;
+	else
+		return RC_OK;
 }
 
 
