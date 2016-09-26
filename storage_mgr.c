@@ -73,44 +73,47 @@ RC closePageFile (SM_FileHandle *fHandle){
 }
 RC destroyPageFile (char *fileName){
 	fclose(sm_file);
-	if(remove(fileName)!=0)
+	if(remove(fileName)!=ZERO)
 		return RC_FILE_NOT_FOUND;
 	else
 		return RC_OK;
 }
 
 RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage){
-	if(pageNum > fHandle->totalNumPages)
+	if(fHandle ==NULL || fHandle->totalNumPages < ONE)
+        return RC_FILE_HANDLE_NOT_INIT;
+    if(pageNum > fHandle->totalNumPages)
 		return RC_READ_NON_EXISTING_PAGE;
 	memPage = (char*) malloc(sizeof(char)*PAGE_SIZE);
-	fseek(sm_file,PAGE_SIZE * (pageNum-1), SEEK_SET);
+	fseek(sm_file,PAGE_SIZE * (pageNum-ONE), SEEK_SET);
 	size_t ret_Read = fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
-	if(ret_Read <= 0)
+	if(ret_Read <= ZERO)
 		return RC_READ_NON_EXISTING_PAGE;
-
+    updateSmFileHandle(fHandle->totalNumPages,pageNum,fHandle);
 	return RC_OK;
 }
 
 RC getBlockPos (SM_FileHandle *fHandle){
-    if(fHandle==NULL || fHandle->curPagePos <=0)
+    if(fHandle==NULL || fHandle->curPagePos <=ZERO)
         return RC_FILE_HANDLE_NOT_INIT;
     else
         return  fHandle->curPagePos;
 }
 
 RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage){
-    if(fHandle->totalNumPages <=0)
+    if(fHandle->totalNumPages <=ZERO)
         return RC_FILE_HANDLE_NOT_INIT;
     if(sm_file<=0)
         return RC_FILE_NOT_FOUND;
     rewind(sm_file);
     memPage =  malloc(sizeof(char)*PAGE_SIZE);
     size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
-    if(ret_Read <= 0)
+    if(ret_Read <= ZERO)
         return RC_READ_NON_EXISTING_PAGE;
-
     updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE,fHandle);
+    return RC_OK;
 }
+
 
 
 
