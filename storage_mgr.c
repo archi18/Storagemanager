@@ -215,7 +215,7 @@ RC appendEmptyBlock(SM_FileHandle *fHandle) {
     char * appendEmptyBlock;
     appendEmptyBlock = (char *) malloc (PAGE_SIZE * sizeof(char));
     memset (appendEmptyBlock, '\0', PAGE_SIZE);
-    int writesize = 0;
+    int writesize = ZERO;
     writesize = fwrite (appendEmptyBlock, sizeof(char), PAGE_SIZE, sm_file);
     if (writesize >= PAGE_SIZE) {
         updateSmFileHandle((fHandle->totalNumPages + ONE),(fHandle->curPagePos + ONE),fHandle);
@@ -226,8 +226,8 @@ RC appendEmptyBlock(SM_FileHandle *fHandle) {
 }
 RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle) {
     int pageNum = fHandle->totalNumPages;
-    int writesize = 0;
-    int extendpagesize = 0;
+    int writesize = ZERO;
+    int extendpagesize = ZERO;
     char *write;
     if (numberOfPages > pageNum) {
         int incresePageSize=(numberOfPages - pageNum);
