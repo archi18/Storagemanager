@@ -8,6 +8,7 @@
 #define FIRST_PAGE 0
 #define ONE 1
 #define ZERO 0
+#define PAGE_OFFSET 1
 /* return code definitions */
 typedef int RC;
 
