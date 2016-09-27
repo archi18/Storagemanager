@@ -17,43 +17,39 @@
 void updateSmFileHandle(int , int ,SM_FileHandle *);
 
 FILE *sm_file;
-SM_FileHandle *sm_fileHandle;
+SM_FileHandle sm_fileHandle;
 typedef char* SM_PageHandle;
 
 void initStorageManager (void){
-	printf("\n Initialize storage manager");
+	printf("\n <*****************Initialize storage manager********************\n ");
 }
 
 RC createPageFile (char *fileName){
-    printf("\n called");
 	sm_file = fopen(fileName,"w+");
     char *appendEmptyBlock =  malloc (PAGE_SIZE * sizeof(char));
 	if (!sm_file){
 		return RC_FILE_NOT_FOUND;
 	}
-    else{
-        printf("\n file created ");
-    }
-    memset(appendEmptyBlock,'a',PAGE_SIZE);
+    memset(appendEmptyBlock,'\0',PAGE_SIZE);
     size_t rate_in = fwrite (appendEmptyBlock, sizeof(char), PAGE_SIZE, sm_file);
-	sm_fileHandle->fileName = fileName;
-    printf("file created");
-	updateSmFileHandle(ONE,FIRST_PAGE,sm_fileHandle);
+	sm_fileHandle.fileName = fileName;
+	updateSmFileHandle(ONE,FIRST_PAGE,&sm_fileHandle);
+    fclose(sm_file);
 	return RC_OK;
 }
 
 
 RC openPageFile (char *fileName, SM_FileHandle *fHandle){
-	sm_file = fopen(fileName,"r");
+	sm_file = fopen(fileName,"rb+");
 	if (!sm_file){
 		return RC_FILE_NOT_FOUND;
 	}
 	fseek(sm_file,ZERO,SEEK_END);
 	int last_byte_loc = ftell(sm_file);
 	int totalNumPages = (int) last_byte_loc / PAGE_SIZE;
-	updateSmFileHandle(totalNumPages,ONE,fHandle);
-	printf("total No of pages in file %d ", totalNumPages);
-
+    fHandle->fileName =fileName;
+	updateSmFileHandle(totalNumPages,ZERO,fHandle);
+    rewind(sm_file);
     return RC_OK;
 }
 
@@ -69,15 +65,17 @@ void updateSmFileHandle(int totalNumPages, int curPagePos,SM_FileHandle *sm_file
 }
 
 RC closePageFile (SM_FileHandle *fHandle){
-	fclose(sm_file);
-	free(fHandle);
+	if(fclose(sm_file)==ZERO)
+        return  RC_OK;
+    else
+        return RC_FILE_NOT_FOUND;
 }
 RC destroyPageFile (char *fileName){
-	fclose(sm_file);
-	if(remove(fileName)!=ZERO)
-		return RC_FILE_NOT_FOUND;
-	else
+    fclose(sm_file);
+	if(remove(fileName)==ZERO)
 		return RC_OK;
+    else
+        return RC_OK;
 }
 
 RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage){
@@ -107,8 +105,8 @@ RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage){
     if(sm_file<=ZERO)
         return RC_FILE_NOT_FOUND;
     rewind(sm_file);
-    memPage =  malloc(sizeof(char)*PAGE_SIZE);
-    size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
+   // memPage =  malloc(sizeof(char)*PAGE_SIZE);
+    size_t ret_Read=fread(memPage, PAGE_SIZE, sizeof(char),sm_file);
     if(ret_Read <= ZERO)
         return RC_READ_NON_EXISTING_PAGE;
     updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE,fHandle);
@@ -120,9 +118,9 @@ RC readLastBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
         return RC_FILE_HANDLE_NOT_INIT;
     if(sm_file==NULL)
         return RC_FILE_NOT_FOUND;
-    fseek(sm_file,(fHandle->totalNumPages-1)*PAGE_SIZE, 0);
+    fseek(sm_file,(fHandle->totalNumPages-1)*PAGE_SIZE, SEEK_SET);
     memPage =  malloc(sizeof(char)*PAGE_SIZE);
-    size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
+    size_t ret_Read=fread(memPage, PAGE_SIZE, sizeof(char),sm_file);
     if(ret_Read <= 0)
         return RC_READ_FAILED;
     updateSmFileHandle(fHandle->totalNumPages, fHandle->totalNumPages,fHandle);
@@ -137,7 +135,7 @@ RC readCurrentBlock (SM_FileHandle *fHandle, SM_PageHandle memPage){
     int currentPagePos = fHandle->curPagePos;
     memPage =  malloc(sizeof(char)*PAGE_SIZE);
     fseek(sm_file,(PAGE_SIZE * (currentPagePos -ONE)),SEEK_SET);
-    size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
+    size_t ret_Read=fread(memPage, PAGE_SIZE, sizeof(char),sm_file);
     if(ret_Read <= ZERO)
         return RC_READ_NON_EXISTING_PAGE;
     updateSmFileHandle(fHandle->totalNumPages, currentPagePos,fHandle);
@@ -156,7 +154,7 @@ RC readPreviousBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
     int prev_Page = fHandle->curPagePos - ONE;
     fseek(sm_file,(PAGE_SIZE*(prev_Page-1)),SEEK_SET);
     memPage = malloc(sizeof(char) * PAGE_SIZE);
-    size_t ret_Read = fread(memPage, sizeof(char), PAGE_SIZE, sm_file);
+    size_t ret_Read = fread(memPage, PAGE_SIZE, sizeof(char),sm_file);
     if (ret_Read <= ZERO)
         return RC_READ_FAILED;
     updateSmFileHandle(fHandle->totalNumPages, (fHandle->curPagePos - ONE), fHandle);
@@ -176,7 +174,7 @@ RC readNextBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
     int next_Page = fHandle->curPagePos + 1;
     fseek(sm_file, (PAGE_SIZE * (next_Page - ONE)), SEEK_SET);
     memPage = malloc(sizeof(char) * PAGE_SIZE);
-    size_t ret_Read = fread(memPage, sizeof(char), PAGE_SIZE, sm_file);
+    size_t ret_Read = fread(memPage, PAGE_SIZE, sizeof(char),sm_file);
     if (ret_Read <= ZERO)
         return RC_READ_FAILED;
     updateSmFileHandle(fHandle->totalNumPages, next_Page, fHandle);
@@ -247,55 +245,7 @@ RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle) {
     return RC_OK;
 }
 
-RC readLastBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
-    if(fHandle->totalNumPages <=0)
-        return RC_FILE_HANDLE_NOT_INIT;
-    if(sm_file<=0)
-        return RC_FILE_NOT_FOUND;
-    fseek(sm_file,(fHandle->totalNumPages-1)*PAGE_SIZE, 0);
-    memPage =  malloc(sizeof(char)*PAGE_SIZE);
-    size_t ret_Read=fread(memPage, sizeof(char), PAGE_SIZE,sm_file);
-    if(ret_Read <= 0)
-        return RC_READ_NON_EXISTING_PAGE;
-    updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE,fHandle);
 
-}
 
-RC readPreviousBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
-    if (fHandle->totalNumPages <= 0)
-        return RC_FILE_HANDLE_NOT_INIT;
-    if (sm_file <= 0)
-        return RC_FILE_NOT_FOUND;
 
-    if (fHandle->curPagePos<FIRST_PAGE)
-        return RC_FILE_HANDLE_NOT_INIT;
-    if (fHandle->curPagePos == FIRST_PAGE)
-        return RC_CANNOT_GO_TO_PREV_PAGE;
 
-    int prev_Page = fHandle->curPagePos -1;
-    fseek(sm_file,(PAGE_SIZE*(prev_Page-1)),SEEK_SET);
-    memPage = malloc(sizeof(char) * PAGE_SIZE);
-    size_t ret_Read = fread(memPage, sizeof(char), PAGE_SIZE, sm_file);
-    if (ret_Read <= 0)
-        return RC_READ_NON_EXISTING_PAGE;
-    updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE, fHandle);
-}
-
-RC readNextBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
-    if (fHandle->totalNumPages <= 0)
-        return RC_FILE_HANDLE_NOT_INIT;
-    if (sm_file <= 0)
-        return RC_FILE_NOT_FOUND;
-
-    if (fHandle->curPagePos<FIRST_PAGE)
-        return RC_FILE_HANDLE_NOT_INIT;
-    if (fHandle->curPagePos == PAGE_SIZE)
-        return RC_CANNOT_GO_TO_NEXT_PAGE;
-
-    int next_Page = fHandle->curPagePos +1;
-    fseek(sm_file,(PAGE_SIZE*(next_Page +1)),SEEK_SET);
-    memPage = malloc(sizeof(char) * PAGE_SIZE);
-    size_t ret_Read = fread(memPage, sizeof(char), PAGE_SIZE, sm_file);
-    if (ret_Read <= 0)
-        return RC_READ_NON_EXISTING_PAGE;
-    updateSmFileHandle(fHandle->totalNumPages, FIRST_PAGE, fHandle);

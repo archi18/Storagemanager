@@ -5,7 +5,7 @@
 
 /* module wide constants */
 #define PAGE_SIZE 4096
-#define FIRST_PAGE 1
+#define FIRST_PAGE 0
 #define ONE 1
 #define ZERO 0
 /* return code definitions */
