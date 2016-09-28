@@ -18,7 +18,7 @@ void updateSmFileHandle(int , int ,SM_FileHandle *);
 
 FILE *sm_file;
 SM_FileHandle sm_fileHandle;
-typedef char* SM_PageHandle;
+//typedef char* SM_PageHandle;
 
 void initStorageManager (void){
 	printf("\n <*****************Initialize storage manager********************\n ");
@@ -71,7 +71,6 @@ RC closePageFile (SM_FileHandle *fHandle){
         return RC_FILE_NOT_FOUND;
 }
 RC destroyPageFile (char *fileName){
-    fclose(sm_file);
 	if(remove(fileName)==ZERO)
 		return RC_OK;
     else
