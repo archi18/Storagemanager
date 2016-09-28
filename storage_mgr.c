@@ -171,7 +171,7 @@ RC readNextBlock (SM_FileHandle *fHandle, SM_PageHandle memPage) {
         return RC_FILE_HANDLE_NOT_INIT;
     if (sm_file == NULL)
         return RC_FILE_NOT_FOUND;
-    if (fHandle->curPagePos == fHandle->totalNumPages)
+    if (fHandle->curPagePos == (fHandle->totalNumPages-ONE))
         return RC_READ_NON_EXISTING_PAGE;
 
     int next_Page = fHandle->curPagePos + 1;
