@@ -65,14 +65,18 @@ void updateSmFileHandle(int totalNumPages, int curPagePos,SM_FileHandle *sm_file
 }
 
 RC closePageFile (SM_FileHandle *fHandle){
+
 	if(fclose(sm_file)==ZERO)
         return  RC_OK;
     else
         return RC_FILE_NOT_FOUND;
+
 }
 RC destroyPageFile (char *fileName){
-	if(remove(fileName)==ZERO)
-		return RC_OK;
+    if(sm_file)
+        fclose(sm_file);
+	if(remove(fileName)!= 0)
+		return RC_FILE_NOT_FOUND;
     else
         return RC_OK;
 }
@@ -230,7 +234,7 @@ RC appendEmptyBlock(SM_FileHandle *fHandle) {
     fseek(sm_file,0,SEEK_END);
     writesize = fwrite (appendEmptyBlock, sizeof(char), PAGE_SIZE, sm_file);
     if (writesize >= PAGE_SIZE) {
-        updateSmFileHandle((fHandle->totalNumPages + ONE),(fHandle->curPagePos + ONE),fHandle);
+        updateSmFileHandle((fHandle->totalNumPages + ONE),(fHandle->totalNumPages),fHandle);
         return RC_OK;
     }else {
         return RC_WRITE_FAILED;
@@ -248,7 +252,7 @@ RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle) {
         memset(write, '\0', extendpagesize);
         writesize = fwrite(write, sizeof(char), extendpagesize, sm_file);
         if (writesize >= extendpagesize) {
-            updateSmFileHandle((fHandle->totalNumPages + incresePageSize), (fHandle->curPagePos + incresePageSize), fHandle);
+            updateSmFileHandle((fHandle->totalNumPages + incresePageSize), (fHandle->totalNumPages-ONE + incresePageSize), fHandle);
             return RC_OK;
         } else {
             return RC_WRITE_FAILED;
